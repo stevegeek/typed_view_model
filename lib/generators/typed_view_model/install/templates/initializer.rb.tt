@@ -1,0 +1,6 @@
+# frozen_string_literal: true
+
+# Register host-app helper namespaces for the `helpers :name` DSL on
+# ApplicationViewModel subclasses. String form lets Zeitwerk autoload on demand.
+#
+# TypedViewModel.helper_namespaces << "MyApp::ViewModelHelpers"
