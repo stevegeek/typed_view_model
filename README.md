@@ -29,7 +29,7 @@ After bundling, scaffold the host-app integration:
 bin/rails generate typed_view_model:install
 ```
 
-See [Background-job view context](#background-job-view-context) for the `--with-job-view-context` flag.
+See [Rendering view models from background jobs](#rendering-view-models-from-background-jobs) to wire up job-side rendering.
 
 ---
 
@@ -344,19 +344,49 @@ TypedViewModel::HashedKey.call("v1/manifest")  # => SHA1 of the string
 
 ---
 
-## Background-job view context
+## Rendering view models from background jobs
 
-View-models that call helpers (URL helpers, `url_for`, etc.) from inside an `ActiveJob` have no request and no `view_context`. The install generator scaffolds a host-app concern that fakes one and stashes it via `TypedViewModel.current_helpers=`:
+View-models that call helpers (URL helpers, `url_for`, etc.) from inside a job have no request and no `view_context`. `JobHelpers` is the job-side mirror of `ControllerHelpers`: it wraps each `perform` in `with_current_helpers(shim) { yield }`, where `shim` is a minimal class that mixes in `Rails.application.routes.url_helpers` and stubs `url_for` to `"#"`.
 
-```bash
-bin/rails generate typed_view_model:install --with-job-view-context
-# omit ActiveStorage handling:
-bin/rails generate typed_view_model:install --with-job-view-context --no-active-storage
+```ruby
+class ApplicationJob < ActiveJob::Base
+  include TypedViewModel::JobHelpers
+end
 ```
 
-This produces `app/lib/application_view_model_concerns/job_view_context.rb` with a `view_context` method, a default `url_for` (handling `ActiveStorage::Blob` and `ActiveStorage::VariantWithRecord` when active-storage is on), and a `build_view_context_class` extension point. Include it in your `ApplicationViewModel` (the generator does this automatically).
+The gem does **not** add `activejob` as a runtime dependency. The `around_perform` callback only runs inside `included do … end`, so the concern is harmless to load when no job framework is present — but `include`-ing it requires the host class to expose `around_perform` (i.e. an `ActiveJob::Base` subclass).
 
-The concern is **app-owned** — edit it to splice in your own helper includes (`CurrentHelper`, `TimezoneHelper`, currency formatting, etc.) without subclassing-with-`super` gymnastics.
+### ActiveStorage URLs
+
+If your view-models reference `ActiveStorage::Blob` or `ActiveStorage::VariantWithRecord` URLs, opt into URL handling explicitly:
+
+```ruby
+class ApplicationJob < ActiveJob::Base
+  include TypedViewModel::JobHelpers
+  include TypedViewModel::JobHelpers::ActiveStorageUrls
+end
+```
+
+This decorates the shim's `url_for` to dispatch on attachment classes; everything else falls through to the parent shim.
+
+### Custom view-context
+
+Override `build_view_context_class` and call `super` to splice in your own helper includes (`CurrentHelper`, `TimezoneHelper`, currency formatting, etc.):
+
+```ruby
+class ApplicationJob < ActiveJob::Base
+  include TypedViewModel::JobHelpers
+
+  private
+
+  def build_view_context_class
+    Class.new(super) do
+      include CurrentHelper
+      include TimezoneHelper
+    end
+  end
+end
+```
 
 ---
 
@@ -479,11 +509,19 @@ Module mixed via `extend`.
 
 `ActiveSupport::Concern`. Include in `ApplicationController` to install an `around_action` that wraps each request in `TypedViewModel.with_current_helpers(view_context) { … }`.
 
+### `TypedViewModel::JobHelpers`
+
+`ActiveSupport::Concern`. Include in `ApplicationJob` to install an `around_perform` that wraps each `perform` in `TypedViewModel.with_current_helpers(shim_view_context) { … }`. `build_view_context_class` is the override hook.
+
+### `TypedViewModel::JobHelpers::ActiveStorageUrls`
+
+`ActiveSupport::Concern`. Opt-in extension for hosts using ActiveStorage; decorates the shim's `url_for` to handle `ActiveStorage::Blob` and `ActiveStorage::VariantWithRecord`.
+
 ### Generator
 
-`rails generate typed_view_model:install [--with-job-view-context] [--[no-]active-storage]`
+`rails generate typed_view_model:install`
 
-Writes `app/lib/application_view_model.rb`, optionally `app/lib/application_view_model_concerns/job_view_context.rb`, and `config/initializers/typed_view_model.rb`. The generated files are yours to edit.
+Writes `app/lib/application_view_model.rb` and `config/initializers/typed_view_model.rb`. The generated files are yours to edit. Job-side wiring is opt-in: `include TypedViewModel::JobHelpers` directly in `ApplicationJob`.
 
 ---
 
@@ -492,7 +530,7 @@ Writes `app/lib/application_view_model.rb`, optionally `app/lib/application_view
 - **Render anything.** No partial dispatch, no `template`, no `call`. Use ViewComponent or plain partials for rendering.
 - **Forward to a wrapped record.** No `method_missing` to the underlying model. Declare props or expose via explicit methods.
 - **Enforce trait `requires` at runtime.** That's `Literal::Data`'s job on the host class.
-- **Provide a real view context inside jobs.** The generated `JobViewContext` is a *shim* — URL helpers and a stubbed `url_for`. It does not run partials, evaluate ERB, or expose the full `ActionView::Base` surface.
+- **Provide a real view context inside jobs.** `JobHelpers` installs a *shim* — URL helpers and a stubbed `url_for`. It does not run partials, evaluate ERB, or expose the full `ActionView::Base` surface.
 - **Validate.** View-models are display objects; data is assumed to already be valid by the time it gets here. For input validation see `typed_form_model`.
 
 ---

@@ -1,14 +1,10 @@
 # frozen_string_literal: true
 
 # Application-level view model. Extends TypedViewModel::Base; subclasses
-# inherit the helpers DSL, traits, and (optionally) cache-key + job-view
-# concerns. Override `cache_key_modifier` if you scope cache keys by deploy
-# version, locale, etc.
+# inherit the helpers DSL, traits, and the cache-key concern. Override
+# `cache_key_modifier` to scope fragment cache keys for the whole app.
 class ApplicationViewModel < ::TypedViewModel::Base
   include ::TypedViewModel::WithCacheKey
-<% if with_job_view_context? -%>
-  include ::ApplicationViewModelConcerns::JobViewContext
-<% end -%>
 
   private
 

@@ -18,7 +18,9 @@ First release. Initial public extraction.
   - `:text` — `TextHelpers` (`truncate`, `pluralize`, `simple_format`, `excerpt`, `highlight`, `word_wrap`, `dom_class`, `dom_id`, `class_names`, `token_list`)
   - `:link` — `LinkHelpers` (`link_to`, `mail_to`, `phone_to`, `sms_to`, `current_page?`)
 - `TypedViewModel::TestSupport::{MockObject, TraitTestHarness, TraitTestHelpers}` — trait testing without ActiveRecord.
-- Per-request view-context stash via `TypedViewModel.current_helpers` / `with_current_helpers(value) { ... }` and the `TypedViewModel::ControllerHelpers` concern (an `around_action` that wraps each request). Fiber-safe on Rails 7+ via `ActiveSupport::IsolatedExecutionState`.
-- `rails g typed_view_model:install` generator scaffolds `ApplicationViewModel`, an optional job-view-context concern (`--with-job-view-context`, `--[no-]active-storage`), and a stub initializer.
+- Per-request view-context stash via `TypedViewModel.current_helpers` / `with_current_helpers(value) { ... }` and the `TypedViewModel::ControllerHelpers` concern (an `around_action` that wraps each request). Fiber-safe via `ActiveSupport::IsolatedExecutionState`.
+- `TypedViewModel::JobHelpers` — opt-in `around_perform` concern mirroring `ControllerHelpers` for background jobs. Wraps `perform` in `with_current_helpers(shim) { ... }`. `build_view_context_class` is the override hook. No `activejob` runtime dependency.
+- `TypedViewModel::JobHelpers::ActiveStorageUrls` — opt-in extension that decorates the shim's `url_for` to handle `ActiveStorage::Blob` and `ActiveStorage::VariantWithRecord`. No `activestorage` runtime dependency.
+- `rails g typed_view_model:install` generator scaffolds `ApplicationViewModel` and a stub initializer.
 
 Hard runtime dependencies: `literal`, `activesupport`, `actionpack`.
