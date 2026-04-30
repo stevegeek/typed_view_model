@@ -29,11 +29,11 @@ Gem::Specification.new do |spec|
 
   # Runtime
   spec.add_dependency "literal", ">= 1.9"
-  spec.add_dependency "activesupport", ">= 7.0"
-  spec.add_dependency "actionpack", ">= 7.0"
+  spec.add_dependency "activesupport", ">= 8.0"
+  spec.add_dependency "actionpack", ">= 8.0"
 
   # Development
   spec.add_development_dependency "minitest", "~> 5.0"
   spec.add_development_dependency "rake", "~> 13.0"
-  spec.add_development_dependency "railties", ">= 7.0"
+  spec.add_development_dependency "railties", ">= 8.0"
 end
