@@ -21,7 +21,7 @@ gem "typed_view_model"
 bundle install
 ```
 
-Requires Rails ≥ 7.0 and Ruby ≥ 3.2. Hard runtime dependencies: `literal`, `activesupport`, `actionpack`.
+Requires Rails ≥ 8.0 and Ruby ≥ 3.2. Hard runtime dependencies: `literal`, `activesupport`, `actionpack`.
 
 After bundling, scaffold the host-app integration:
 
@@ -537,13 +537,11 @@ Writes `app/lib/application_view_model.rb` and `config/initializers/typed_view_m
 
 ## Stability
 
-Pre-1.0. The API is what's in production use across the parent codebase, but:
+1.0.0. The API is in production use across the parent codebase and follows semver going forward. Caveats:
 
-- The shape of `TestSupport` (especially `with_mock`'s single-prop assumption) may shift.
+- The shape of `TestSupport` (especially `with_mock`'s single-prop assumption) may shift in a future major.
 - RBS sigs are partial.
 - `WithCacheKey` is exercised through host-app integration tests rather than the in-gem suite.
-
-Pin to an exact version. Expect breaking changes in `0.x`.
 
 ---
 
