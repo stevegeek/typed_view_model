@@ -21,7 +21,7 @@ gem "typed_view_model"
 bundle install
 ```
 
-Requires Rails ≥ 8.0 and Ruby ≥ 3.2. Hard runtime dependencies: `literal`, `activesupport`, `actionpack`.
+Requires Rails ≥ 8.0 and Ruby ≥ 3.3. Hard runtime dependencies: `literal`, `activesupport`, `actionpack`.
 
 After bundling, scaffold the host-app integration:
 
