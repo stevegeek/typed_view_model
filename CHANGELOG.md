@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- Minimum Ruby 3.3 (3.2 is end-of-life).
+
 ## [1.0.0]
 
 First release. Initial public extraction.
